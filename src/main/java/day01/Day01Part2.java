@@ -1,3 +1,6 @@
+package day01;
+
+import util.InputReader;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,14 +1,17 @@
+package day01;
+
+import util.InputReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
 import java.lang.Math;
 
-public class Day01Part01 {
+public class Day01Part1 {
     private List<String> content;
     private List<Integer> list1 = new ArrayList<>();
     private List<Integer> list2 = new ArrayList<>();
 
-    Day01Part01(String path) {
+    Day01Part1(String path) {
         content = InputReader.readInputByLine(path);
     }
 
@@ -34,7 +37,7 @@ public class Day01Part01 {
 
 
     public static void main(String[] args) {
-        Day01Part01 d1p1 = new Day01Part01("src/main/resources/day01.txt");
+        Day01Part1 d1p1 = new Day01Part1("src/main/resources/day01.txt");
         d1p1.fillLists();
         System.out.println(d1p1.calculateDistance());
     }
