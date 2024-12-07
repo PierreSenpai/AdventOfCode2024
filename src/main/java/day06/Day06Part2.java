@@ -20,7 +20,6 @@ public class Day06Part2 {
     
     Day06Part2() {
         originalMap = InputReader.readInputByLine("src/main/resources/day06.txt");
-        // markedMap = new ArrayList<String>(map);
     }
 
     public void processInput(){
@@ -29,15 +28,10 @@ public class Day06Part2 {
         // iterates through all possible locations for the new obstruction
         for (int row = 0; row < originalMap.size(); row++) {
             for (int col = 0; col < originalMap.get(row).length(); col++) {
-                // prohibits placing obstruction on or in front of starting position
-                try {
-                    if (originalMap.get(row).charAt(col) == '^' ||
-                        originalMap.get(row + 1).charAt(col) == '^') {
-                        continue;
-                    }
-                } catch (IndexOutOfBoundsException e) {}
+                // prohibits placing obstruction on starting position
+                    if (originalMap.get(row).charAt(col) == '^') continue;
                 // prohibits placing obstruction on already existing obstruction
-                if (originalMap.get(row).charAt(col) == '#') {continue;}
+                if (originalMap.get(row).charAt(col) == '#') continue;
                 // seperate map and markedMap for each possibility
                 currentDir = '^'; // overwrite direction of last iteration with starting direction
                 map = new ArrayList<String>(originalMap);
@@ -75,7 +69,7 @@ public class Day06Part2 {
 
     public boolean setMarked() { // returns true if current position already marked with same direction
         char currentSymbol = markedMap.get(currentRow).charAt(currentCol);
-        if (currentSymbol == currentDir) {return true;}
+        if (currentSymbol == currentDir) return true;
 
         setTo(markedMap, currentDir);
         return false;
