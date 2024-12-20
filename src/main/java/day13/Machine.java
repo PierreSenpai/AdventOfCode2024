@@ -1,7 +1,8 @@
 package day13;
 
 public class Machine {
-    int xA, yA, xB, yB, xPrize, yPrize;
+    int xA, yA, xB, yB;
+    long xPrize, yPrize;
 
     public void setXA(int xA) {
        this.xA = xA;
@@ -19,11 +20,11 @@ public class Machine {
        this.yB = yB;
     }
 
-    public void setXPrize(int xPrize) {
+    public void setXPrize(long xPrize) {
        this.xPrize = xPrize;
     }
 
-    public void setYPrize(int yPrize) {
+    public void setYPrize(long yPrize) {
        this.yPrize = yPrize;
     }
 }
