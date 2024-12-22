@@ -1,11 +1,12 @@
 package day16;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import util.InputReader;
 
-public class Day16Part1 {
+public class Day16Part2 {
     private char[][] map;
     private int nX, nY;
 
@@ -17,8 +18,9 @@ public class Day16Part1 {
     private HashMap<List<Integer>, Integer> minScoreAt = new HashMap<>();
     private int allowedTurns = 0;
     private int lowestScore = Integer.MAX_VALUE;
+    private HashSet<List<Integer>> sittingSpots = new HashSet<>();
 
-    Day16Part1() {
+    Day16Part2() {
         List<String> input = InputReader.readInputByLine("src/main/resources/day16.txt");
         nX = input.get(0).length();
         nY = input.size();
@@ -34,9 +36,11 @@ public class Day16Part1 {
     public void processInput() {
         while (lowestScore == Integer.MAX_VALUE) {
             tryPaths();
+            System.out.println("allowed turns: "+allowedTurns);
             allowedTurns++;
         }
         System.out.println(lowestScore);
+        System.out.println(sittingSpots.size());
     }
 
     public void tryPaths() {
@@ -52,10 +56,16 @@ public class Day16Part1 {
             }
         }
         // starts facing east -> dir = 0
-        tryPath(startX, startY, 0, 0, 0);
+        tryPath(startX, startY, 0, 0, 0, new HashSet<>());
     }
 
-    public void tryPath(int x, int y, int turnsMade, int dir, int score) {
+    public void tryPath(
+            int x,
+            int y,
+            int turnsMade,
+            int dir,
+            int score,
+            HashSet<List<Integer>> path) {
         if (allowedTurns - turnsMade < 0)
             return;
 
@@ -68,11 +78,18 @@ public class Day16Part1 {
 
         // moves straight until it hits a wall
         while (map[x][y] != '#') {
+            path.add(List.of(x, y));
             // check if the end is reached
             if (map[x][y] == 'E') {
+                // resets all sitting positions if a shorter path was found
                 if (score < lowestScore) {
                     lowestScore = score;
+                    sittingSpots = new HashSet<>();
+                    sittingSpots.addAll(path);
                     return;
+                }
+                if (score == lowestScore) {
+                    sittingSpots.addAll(path);
                 }
             }
             // prevents moving back the same path it went forward
@@ -96,14 +113,14 @@ public class Day16Part1 {
             leftX = x + directions[leftDir][0];
             leftY = y + directions[leftDir][1];
             if (map[leftX][leftY] == '.')
-                tryPath(x, y, turnsMade + 1, leftDir, score + 1000);
+                tryPath(x, y, turnsMade + 1, leftDir, score + 1000, new HashSet<>(path));
 
             // checks right
             rightDir = (dir + 1) % 4;
             rightX = x + directions[rightDir][0];
             rightY = y + directions[rightDir][1];
             if (map[rightX][rightY] == '.')
-                tryPath(x, y, turnsMade + 1, rightDir, score + 1000);
+                tryPath(x, y, turnsMade + 1, rightDir, score + 1000, new HashSet<>(path));
 
             // move straight
             x += dx;
@@ -116,7 +133,7 @@ public class Day16Part1 {
     }
 
     public static void main(String[] args) {
-        Day16Part1 d16p1 = new Day16Part1();
-        d16p1.processInput();
+        Day16Part2 d16p2 = new Day16Part2();
+        d16p2.processInput();
     }
 }
