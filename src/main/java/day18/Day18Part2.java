@@ -2,7 +2,6 @@ package day18;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,7 +15,6 @@ public class Day18Part2 {
     private List<List<Integer>> fallingBytes = new ArrayList<>();
     private HashMap<List<Integer>, Integer> lowestMovesAt = new HashMap<>();
     private int lowestMovesToEnd;
-    private HashSet<List<Integer>> previousPath = new HashSet<>();
 
     Day18Part2() {
         for (String aByte : InputReader.readInputByLine("src/main/resources/day18.txt")) {
@@ -35,10 +33,7 @@ public class Day18Part2 {
 
         for (int i = nBytesFalling + 1; i < fallingBytes.size(); i++) {
             System.out.println(i);
-            // only looks for a new path, when the previous one gets blocked
-            if (letByteFall(i)) {
-                continue;
-            }
+            letByteFall(i);
             lowestMovesAt = new HashMap<>();
             lowestMovesToEnd = 0;
             findPath();
@@ -65,21 +60,17 @@ public class Day18Part2 {
         }
     }
 
-    public boolean letByteFall(int index) {
+    public void letByteFall(int index) {
         // returns true, if the previous path isn't blocked
         List<Integer> coords = fallingBytes.get(index);
         map[coords.get(0)][coords.get(1)] = '#';
-        if (previousPath.size() == 0 || previousPath.contains(coords)) {
-            return false;
-        }
-        return true;
     }
 
     public void findPath() {
-        findPath(0, 0, 0, new HashSet<>());
+        findPath(0, 0, 0);
     }
 
-    public boolean findPath(int x, int y, int movesMade, HashSet<List<Integer>> path) {
+    public boolean findPath(int x, int y, int movesMade) {
         // using booleans to stop the whole recursion once one path was found since
         // we don't need to find the shortest one now
 
@@ -90,38 +81,34 @@ public class Day18Part2 {
             return false;
         } else {
             lowestMovesAt.put(currCoords, movesMade);
-            path.add(currCoords);
         }
+        // stops successfully when the end position is reached
         if (x == maxX - 1 && y == maxY - 1) {
             lowestMovesToEnd = movesMade;
-            previousPath = path;
             return true;
         }
-        // copies of the hashsets are made so the different function calls dont
-        // interfere with each other
 
         // check down
         if (checkAdjacent(x, y + 1)) {
-            // for one direction, you can keep the 'original' path
-            if (findPath(x, y + 1, movesMade + 1, path)) {
+            if (findPath(x, y + 1, movesMade + 1)) {
                 return true;
             }
         }
         // check right
         if (checkAdjacent(x + 1, y)) {
-            if (findPath(x + 1, y, movesMade + 1, new HashSet<>(path))) {
+            if (findPath(x + 1, y, movesMade + 1)) {
                 return true;
             }
         }
         // check up
         if (checkAdjacent(x, y - 1)) {
-            if (findPath(x, y - 1, movesMade + 1, new HashSet<>(path))) {
+            if (findPath(x, y - 1, movesMade + 1)) {
                 return true;
             }
         }
         // check left
         if (checkAdjacent(x - 1, y)) {
-            if (findPath(x - 1, y, movesMade + 1, new HashSet<>(path))) {
+            if (findPath(x - 1, y, movesMade + 1)) {
                 return true;
             }
         }
