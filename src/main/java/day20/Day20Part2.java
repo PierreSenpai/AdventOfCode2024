@@ -1,13 +1,12 @@
 package day20;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 import util.InputReader;
 
-public class Day20Part1 {
+public class Day20Part2 {
     private char[][] map;
     private int maxX, maxY, startX, startY, endX, endY;
     // stores how many picoseconds a cheat should at least save
@@ -15,8 +14,9 @@ public class Day20Part1 {
     // stores the time passed, once a position is reached in a standard run
     private HashMap<List<Integer>, Integer> standardPicosAt = new HashMap<>();
     private HashSet<List<Integer>> goodEnoughCheats = new HashSet<>();
+    private final int maxPicosPerCheat = 20;
 
-    Day20Part1() {
+    Day20Part2() {
         List<String> input = InputReader.readInputByLine("src/main/resources/day20.txt");
         maxX = input.getFirst().length();
         maxY = input.size();
@@ -32,17 +32,39 @@ public class Day20Part1 {
         findStartAndEnd();
         // find the time it takes to reach the end without any cheats
         findShortestPath();
-        // checks for each wall that doesn't belong to the outside border
-        // if cheating there saves enough time
-        for (int y = 1; y < maxY - 1; y++) {
-            for (int x = 1; x < maxX - 1; x++) {
-                if (map[x][y] == '#') {
-                    tryCheat(x, y);
-                }
-            }
+
+        // goes through all tiles of the path
+        for (List<Integer> coords : standardPicosAt.keySet()) {
+            int x = coords.get(0);
+            int y = coords.get(1);
+            findCheats(x, y);
         }
         System.out.println(goodEnoughCheats.size());
     }
+
+    public void findCheats(int x, int y) {
+        // tries for all possible positions around the current tile that
+        // can be reached withing the duration of a cheat
+        for (int dy = -maxPicosPerCheat; dy <= maxPicosPerCheat; dy++) {
+            for (int dx = -maxPicosPerCheat; dx <= maxPicosPerCheat; dx++) {
+                // checks Manhattan distance
+                if (Math.abs(dx) + Math.abs(dy) > maxPicosPerCheat) {
+                    continue;
+                }
+                if (!checkIfPath(x + dx, y + dy)) {
+                    continue;
+                }
+                // checks if enough time was saved
+                int newTime = standardPicosAt.get(List.of(x, y)) + Math.abs(dx) + Math.abs(dy);
+                int previousTime = standardPicosAt.get(List.of(x + dx, y + dy));
+                if (previousTime - newTime >= minimumTimeSaved) {
+                    goodEnoughCheats.add(List.of(x, y, x + dx, y + dy));
+                }
+            }
+        }
+    }
+
+    // rest unchanged except renaming checkAdjacent() to checkIfPath()
 
     public void findStartAndEnd() {
         boolean foundStart = false;
@@ -76,28 +98,28 @@ public class Day20Part1 {
         while (x != endX || y != endY) {
             standardPicosAt.put(List.of(x, y), movesMade);
             // check up
-            if (checkAdjacent(x, y - 1) && dir != 'v') {
+            if (checkIfPath(x, y - 1) && dir != 'v') {
                 y--;
                 dir = '^';
                 movesMade++;
                 continue;
             }
             // check down
-            if (checkAdjacent(x, y + 1) && dir != '^') {
+            if (checkIfPath(x, y + 1) && dir != '^') {
                 y++;
                 dir = 'v';
                 movesMade++;
                 continue;
             }
             // check left
-            if (checkAdjacent(x - 1, y) && dir != '>') {
+            if (checkIfPath(x - 1, y) && dir != '>') {
                 x--;
                 dir = '<';
                 movesMade++;
                 continue;
             }
             // check right
-            if (checkAdjacent(x + 1, y) && dir != '<') {
+            if (checkIfPath(x + 1, y) && dir != '<') {
                 x++;
                 dir = '>';
                 movesMade++;
@@ -106,8 +128,8 @@ public class Day20Part1 {
         standardPicosAt.put(List.of(x, y), movesMade);
     }
 
-    public boolean checkAdjacent(int x, int y) {
-        if (x < 0 || x >= maxX && y < 0 && y >= maxY) {
+    public boolean checkIfPath(int x, int y) {
+        if (x < 0 || x >= maxX || y < 0 || y >= maxY) {
             return false;
         }
         if (map[x][y] == '#') {
@@ -116,51 +138,8 @@ public class Day20Part1 {
         return true;
     }
 
-    public void tryCheat(int x, int y) {
-        List<Integer> picosWhenAdjacent = new ArrayList<>();
-        // check if the wall has at least two adjacent free spaces
-        if (adjacentSpaces(x, y, picosWhenAdjacent) < 2) {
-            return;
-        }
-        // sort the 'adjacent seconds'
-        picosWhenAdjacent.sort(null);
-        // determines if the cheat is good enough by looking at the difference
-        // of the highest and lowest adjacent seconds
-        // (the "- 2" account for the to steps that perform the cheat)
-        if (picosWhenAdjacent.getLast() - picosWhenAdjacent.getFirst() - 2 >= minimumTimeSaved) {
-            goodEnoughCheats.add(List.of(x, y));
-        }
-    }
-
-    public int adjacentSpaces(int x, int y, List<Integer> list) {
-        // returns how many adjacent free spaces the wall has and stores
-        // the seconds passed when arriving at them in the given list
-        int adjSpaces = 0;
-        // check up
-        if (checkAdjacent(x, y - 1)) {
-            list.add(standardPicosAt.get(List.of(x, y - 1)));
-            adjSpaces++;
-        }
-        // check down
-        if (checkAdjacent(x, y + 1)) {
-            list.add(standardPicosAt.get(List.of(x, y + 1)));
-            adjSpaces++;
-        }
-        // check left
-        if (checkAdjacent(x - 1, y)) {
-            list.add(standardPicosAt.get(List.of(x - 1, y)));
-            adjSpaces++;
-        }
-        // check right
-        if (checkAdjacent(x + 1, y)) {
-            list.add(standardPicosAt.get(List.of(x + 1, y)));
-            adjSpaces++;
-        }
-        return adjSpaces;
-    }
-
     public static void main(String[] args) {
-        Day20Part1 d20p1 = new Day20Part1();
-        d20p1.processInput();
+        Day20Part2 d20p2 = new Day20Part2();
+        d20p2.processInput();
     }
 }
