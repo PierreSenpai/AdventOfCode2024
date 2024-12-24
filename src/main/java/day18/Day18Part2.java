@@ -31,15 +31,18 @@ public class Day18Part2 {
         final int nBytesFalling = 1024;
         letBytesFall(nBytesFalling);
 
-        for (int i = nBytesFalling + 1; i < fallingBytes.size(); i++) {
-            System.out.println(i);
+        for (int i = nBytesFalling; i < fallingBytes.size(); i++) {
+            // prints current progress
+            System.out.print("bytes fallen: "+ i +"\r");
             letByteFall(i);
             lowestMovesAt = new HashMap<>();
             lowestMovesToEnd = 0;
             findPath();
             // checks if no path was found
             if (lowestMovesToEnd == 0) {
-                System.out.println(fallingBytes.get(i));
+                System.out.println("\n" + String.join(",",
+                        String.valueOf(fallingBytes.get(i).get(0)),
+                        String.valueOf(fallingBytes.get(i).get(1))));
                 return;
             }
         }
@@ -74,7 +77,7 @@ public class Day18Part2 {
         // using booleans to stop the whole recursion once one path was found since
         // we don't need to find the shortest one now
 
-        // stops if a shorter path to that position was already taken
+        // stops if a shorter or equally long path to that position was already taken
         List<Integer> currCoords = List.of(x, y);
         if (lowestMovesAt.get(currCoords) != null &&
                 lowestMovesAt.get(currCoords) <= movesMade) {

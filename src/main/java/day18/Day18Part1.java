@@ -55,7 +55,7 @@ public class Day18Part1 {
     }
 
     public void findPath(int x, int y, int movesMade) {
-        // stops if a shorter path to that position was already taken
+        // stops if a shorter or equally long path to that position was already taken
         List<Integer> currCoords = List.of(x, y);
         if (lowestMovesAt.get(currCoords) != null &&
         lowestMovesAt.get(currCoords) <= movesMade) {
