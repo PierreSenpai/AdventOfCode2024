@@ -1,10 +1,8 @@
 package day21;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import util.InputReader;
 
@@ -30,8 +28,10 @@ public class Day21Part2 {
                                  '^', List.of(-1, 0), 'A', List.of(0, 0),
             '<', List.of(-2, 1), 'v', List.of(-1, 1), '>', List.of(0, 1));
 
-    private Map<String, String> cache = new HashMap<>();
-    private Map<List<Object>, Long> numCache = new HashMap<>();
+    // stores the shortest nextSequence to avoid recomputing it every time
+    private Map<String, String> nextSeqCache = new HashMap<>();
+    // stores the final length for each pair of subsequence and remaining number of robots
+    private Map<List<Object>, Long> lengthCache = new HashMap<>();
 
     Day21Part2() {
         input = InputReader.readInputByLine("src/main/resources/day21.txt");
@@ -39,13 +39,10 @@ public class Day21Part2 {
 
     public void processInput() {
         long sum = 0;
-        long start = System.currentTimeMillis();
         for (String code : input) {
             System.out.print(code + ": ");
             sum += complexityOf(code);
         }
-        long end = System.currentTimeMillis();
-        System.out.println((end - start) + "ms");
         System.out.println(sum);
     }
 
@@ -57,48 +54,27 @@ public class Day21Part2 {
     }
 
     public long shortestSequence(String code) {
-        // sequences to control the first robot
-        Set<String> sequencesFor1 = findNextSequence(code, numKeypad);
-        // sequences to control the second to 26th robot
-        long leastPresses = Long.MAX_VALUE;
-        for (String sequence : sequencesFor1) {
-            long nPresses = function(sequence, 25);
-            if (nPresses < leastPresses) {
-                leastPresses = nPresses;
-            }
-        }
-        return leastPresses;
+        // sequence to control the first robot
+        String sequenceForFirst = findNextSequence(code, numKeypad);
+        // calculates length of the sequence for the 26th robot
+        return lengthFinalSequence(sequenceForFirst, 25);
     }
 
-    public Set<String> findNextSequence(String sequence, Map<Character, List<Integer>> keypad) {
-        // stores sequences, that all lead to the same button presses
-        // (these different sequences are caused by either moving with horizontal
-        //  or vertical preference)
-        Set<String> sequences = new HashSet<>(Set.of(""));
+    public String findNextSequence(String sequence, Map<Character, List<Integer>> keypad) {
+        String nextSequence = "";
 
         int currX = 0;
         int currY = 0;
         for (int i = 0; i < sequence.length(); i++) {
-            Set<String> newSequences = new HashSet<>();
             // finds the next position for the arm
             char button = sequence.charAt(i);
             List<Integer> nextPos = keypad.get(button);
             // moves arm of the robot
-            for (String aSequence : sequences) {
-                // tries with horizontal preference
-                newSequences.add(aSequence + moveArm(currX, currY, nextPos) + 'A');
-                // tries with vertical preference
-                // newSequences.add(aSequence + moveArm(currX, currY, nextPos, false, keypad) + 'A');
-            }
+            nextSequence += moveArm(currX, currY, nextPos) + 'A';
             currX = nextPos.get(0);
             currY = nextPos.get(1);
-            // updates the sequences
-            sequences = newSequences;
         }
-        // test
-        // String best = findBestSequence(sequences);
-        // cache.putIfAbsent(sequence, best);
-        return sequences;
+        return nextSequence;
     }
 
     public String moveArm(int x, int y, List<Integer> newPos) {
@@ -172,87 +148,50 @@ public class Day21Part2 {
         return sequence;
     }
 
-    public static void main(String[] args) {
-        Day21Part2 d21p2 = new Day21Part2();
-        d21p2.processInput();
-    }
-
-    // find sequence for the first robot on the numeric keypad normally
-    // use caching for "subsequences"
-    // create a function that determines the best sequence out of a list
-    // (maybe check the manhattan distance for each move in the following sequence)
-    // (-> can the next robot click the same buttons multiple times in a row
-    // or does he have to switch a lot)
-    public long function(String s, int nRobotsAfter) {
+    public long lengthFinalSequence(String sequence, int nRobotsAfter) {
+        // if the last robot layer is reached, it returns the length of that final subsequence
         if (nRobotsAfter == 0) {
-            return s.length();
+            return sequence.length();
         }
-        // System.out.println("robot: " + (25 - nRobotsAfter + 2));
-        List<Object> key = List.of(s, nRobotsAfter);
-        if (numCache.containsKey(key)) {
-            // System.out.println("found in numCache");
-            return numCache.get(key);
+        // tries to avoid recomputation when identical function call already happened
+        List<Object> key = List.of(sequence, nRobotsAfter);
+        if (lengthCache.containsKey(key)) {
+            return lengthCache.get(key);
         }
-        String original = s;
+        String original = sequence;
         long sum = 0;
+        // splits the sequence into units that end with 'A', since all of them
+        // start and end on the button 'A'. without splitting, the strings would
+        // get too long
         while (true) {
-            if (s.equals("")) {
+            if (sequence.equals("")) {
                 break;
             }
-            int startNextBlock = s.indexOf('A') + 1;
-            String subsequence = s.substring(0, startNextBlock);
-            String subsequenceForNext = function2(subsequence);
-            sum += function(subsequenceForNext, nRobotsAfter - 1);
-            s = s.substring(startNextBlock);
+            int startNextBlock = sequence.indexOf('A') + 1;
+            String subsequence = sequence.substring(0, startNextBlock);
+            // finds the matching nextSsequence to each subsequence and runs the same function
+            // with that sequence -> this continues until the last "robot layer is reached"
+            // and the lengths of all subsequences in the last layer are added together
+            String subsequenceForNext = findNextSequence(subsequence);
+            sum += lengthFinalSequence(subsequenceForNext, nRobotsAfter - 1);
+            sequence = sequence.substring(startNextBlock);
         }
-        numCache.put(List.of(original, nRobotsAfter), sum);
-        // if (nRobotsAfter > 15) {
-        // System.out.println("finished robot: " + (25 - nRobotsAfter + 2));
-        // }
+        // saves result for further function calls that are identical
+        lengthCache.put(List.of(original, nRobotsAfter), sum);
         return sum;
     }
 
-    public String function2(String sequence) {
-        if (cache.containsKey(sequence)) {
-            return cache.get(sequence);
+    public String findNextSequence(String sequence) {
+        if (nextSeqCache.containsKey(sequence)) {
+            return nextSeqCache.get(sequence);
         }
-        // move arm stuff
-        // -> returns a list of sequences
-
-        Set<String> sequences = findNextSequence(sequence, dirKeypad);
-        String best = findBestSequence(sequences);
-        cache.put(sequence, best);
-        // System.out.println(cache.size());
-        return best;
+        String next = findNextSequence(sequence, dirKeypad);
+        nextSeqCache.put(sequence, next);
+        return next;
     }
 
-    public String findBestSequence(Set<String> sequences) {
-        String bestSequence = "";
-        int lowestManhattan = Integer.MAX_VALUE;
-        for (String sequence : sequences) {
-            int thisManhattan = totalManhattan(sequence);
-            if (thisManhattan < lowestManhattan) {
-                bestSequence = sequence;
-                lowestManhattan = thisManhattan;
-            }
-        }
-        return bestSequence;
-    }
-
-    public int totalManhattan(String sequence) {
-        int total = 0;
-        for (int i = 1; i < sequence.length(); i++) {
-            char prevButton = sequence.charAt(i - 1);
-            char followButton = sequence.charAt(i);
-            total += findManhattan(prevButton, followButton);
-        }
-        // System.out.println(total);
-        return total;
-    }
-
-    public int findManhattan(char button1, char button2) {
-        int dx = dirKeypad.get(button2).get(0) - dirKeypad.get(button1).get(0);
-        int dy = dirKeypad.get(button2).get(1) - dirKeypad.get(button1).get(1);
-        return Math.abs(dx) + Math.abs(dy);
+    public static void main(String[] args) {
+        Day21Part2 d21p2 = new Day21Part2();
+        d21p2.processInput();
     }
 }
