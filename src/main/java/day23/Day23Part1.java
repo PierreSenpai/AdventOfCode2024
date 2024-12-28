@@ -14,7 +14,7 @@ public class Day23Part1 {
 
     Day23Part1() {
         List<String> input = InputReader.readInputByLine("src/main/resources/day23.txt");
-        // construct the graph
+        // constructs the graph
         Set<String> vertexSet = new HashSet<>();
         List<String[]> edges = new ArrayList<>();
         for (String line : input) {
